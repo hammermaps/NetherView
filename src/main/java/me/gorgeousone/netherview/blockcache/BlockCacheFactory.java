@@ -186,17 +186,17 @@ public class BlockCacheFactory {
 		return changedBlocks;
 	}
 
-//		private static boolean isCacheBorder(BlockVec blockPos, BlockCache cache) {
-//
-//			BlockVec cacheMin = cache.getMin();
-//			BlockVec cacheMax = cache.getMax();
-//
-//			return isCacheBorder(
-//					blockPos.getX(), blockPos.getY(), blockPos.getZ(),
-//					cacheMin.getX(), cacheMin.getY(), cacheMin.getZ(),
-//					cacheMax.getX(), cacheMax.getY(), cacheMax.getZ(),
-//					cache.getFacing());
-//		}
+		private static boolean isCacheBorder(BlockVec blockPos, BlockCache cache) {
+
+			BlockVec cacheMin = cache.getMin();
+			BlockVec cacheMax = cache.getMax();
+
+			return isCacheBorder(
+					blockPos.getX(), blockPos.getY(), blockPos.getZ(),
+					cacheMin.getX(), cacheMin.getY(), cacheMin.getZ(),
+					cacheMax.getX(), cacheMax.getY(), cacheMax.getZ(),
+					cache.getFacing());
+		}
 	
 	/**
 	 * Returns true if the block is part of the border of the cache cuboid except the side where the portal is

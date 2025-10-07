@@ -7,29 +7,20 @@ import org.bukkit.block.BlockState;
 
 public abstract class BlockType {
 	
-	private static boolean isLegacyServer;
-	
-	/**
-	 * Sets whether BlockType.of() will create a LegacyBlockType or an AquaticBlockType
-	 */
-	public static void configureVersion(boolean isLegacyServer) {
-		BlockType.isLegacyServer = isLegacyServer;
-	}
-	
 	public static BlockType of(Block block) {
-		return isLegacyServer ? new LegacyBlockType(block) : new AquaticBlockType(block);
+		return new AquaticBlockType(block);
 	}
 	
 	public static BlockType of(Material material) {
-		return isLegacyServer ? new LegacyBlockType(material) : new AquaticBlockType(material);
+		return new AquaticBlockType(material);
 	}
 	
 	public static BlockType of(BlockState state) {
-		return isLegacyServer ? new LegacyBlockType(state) : new AquaticBlockType(state);
+		return new AquaticBlockType(state);
 	}
 	
 	public static BlockType of(String serialized) {
-		return isLegacyServer ? new LegacyBlockType(serialized) : new AquaticBlockType(serialized);
+		return new AquaticBlockType(serialized);
 	}
 	
 	/**

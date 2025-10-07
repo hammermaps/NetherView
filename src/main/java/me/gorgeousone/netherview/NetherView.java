@@ -43,9 +43,6 @@ public final class NetherView extends JavaPlugin {
 	public final static String RELOAD_PERM = "netherview.reload";
 	public final static String INFO_PERM = "netherview.info";
 	
-	private boolean isLegacyServer;
-	private Material portalMaterial;
-	
 	private PortalHandler portalHandler;
 	private ViewHandler viewHandler;
 	
@@ -67,9 +64,7 @@ public final class NetherView extends JavaPlugin {
 		registerTotalPortalsChart(metrics);
 		registerPortalsOnline(metrics);
 		
-		loadServerVersion();
-		BlockType.configureVersion(isLegacyServer);
-		PortalLocator.configureVersion(portalMaterial);
+		PortalLocator.configureVersion(Material.NETHER_PORTAL);
 		
 		portalHandler = new PortalHandler(this);
 		viewHandler = new ViewHandler(this, portalHandler);
@@ -140,18 +135,7 @@ public final class NetherView extends JavaPlugin {
 		return false;
 	}
 	
-	private void loadServerVersion() {
-		
-		String version = getServer().getBukkitVersion();
-		isLegacyServer =
-				version.contains("1.8") ||
-				version.contains("1.9") ||
-				version.contains("1.10") ||
-				version.contains("1.11") ||
-				version.contains("1.12");
-		
-		portalMaterial = isLegacyServer ? Material.matchMaterial("PORTAL") : Material.NETHER_PORTAL;
-	}
+
 	
 	private void registerCommands() {
 		
@@ -170,14 +154,16 @@ public final class NetherView extends JavaPlugin {
 		PluginManager manager = Bukkit.getPluginManager();
 		manager.registerEvents(new TeleportListener(this, portalHandler), this);
 		manager.registerEvents(new PlayerMoveListener(this, viewHandler), this);
-		manager.registerEvents(new BlockListener(this, portalHandler, viewHandler, portalMaterial), this);
+		manager.registerEvents(new BlockListener(this, portalHandler, viewHandler), this);
 	}
 	
 	private void loadConfigData() {
 		
 		reloadConfig();
 		getConfig().options().copyDefaults(true);
-		addVersionDependentDefaults();
+		getConfig().addDefault("overworld-border", "white_terracotta");
+		getConfig().addDefault("nether-border", "red_concrete");
+		getConfig().addDefault("end-border", "black_concrete");
 		saveConfig();
 		
 		portalProjectionDist = getConfig().getInt("portal-projection-view-distance", 8);
@@ -190,20 +176,6 @@ public final class NetherView extends JavaPlugin {
 		loadWorldBorderBlockTypes();
 		loadWorldsWithPortalViewing();
 		loadRegisteredPortals();
-	}
-	
-	private void addVersionDependentDefaults() {
-		
-		if (isLegacyServer) {
-			getConfig().addDefault("overworld-border", "stained_clay");
-			getConfig().addDefault("nether-border", "stained_clay:14");
-			getConfig().addDefault("end-border", "wool:15");
-			
-		} else {
-			getConfig().addDefault("overworld-border", "white_terracotta");
-			getConfig().addDefault("nether-border", "red_concrete");
-			getConfig().addDefault("end-border", "black_concrete");
-		}
 	}
 	
 	private void loadWorldsWithPortalViewing() {

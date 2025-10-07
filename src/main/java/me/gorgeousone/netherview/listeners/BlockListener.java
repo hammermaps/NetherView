@@ -45,17 +45,14 @@ public class BlockListener implements Listener {
 	private NetherView main;
 	private PortalHandler portalHandler;
 	private ViewHandler viewHandler;
-	private Material portalMaterial;
 	
 	public BlockListener(NetherView main,
 	                     PortalHandler portalHandler,
-	                     ViewHandler viewHandler,
-	                     Material portalMaterial) {
+	                     ViewHandler viewHandler) {
 		
 		this.main = main;
 		this.portalHandler = portalHandler;
 		this.viewHandler = viewHandler;
-		this.portalMaterial = portalMaterial;
 		addBlockUpdateInterceptor();
 	}
 	
@@ -168,7 +165,7 @@ public class BlockListener implements Listener {
 		
 		updateBlockCaches(block, BlockType.of(Material.AIR), block.getType().isOccluding());
 		
-		if (blockType == Material.OBSIDIAN || blockType == portalMaterial) {
+		if (blockType == Material.OBSIDIAN || blockType == Material.NETHER_PORTAL) {
 			removeDamagedPortals(block);
 		}
 	}
@@ -197,7 +194,7 @@ public class BlockListener implements Listener {
 	public void onBlockExplode(BlockExplodeEvent event) {
 		
 		for (Block block : event.blockList()) {
-			if (block.getType() == portalMaterial) {
+			if (block.getType() == Material.NETHER_PORTAL) {
 				removeDamagedPortals(block);
 			}
 		}
@@ -210,7 +207,7 @@ public class BlockListener implements Listener {
 	public void onBlockExplode(EntityExplodeEvent event) {
 		
 		for (Block block : event.blockList()) {
-			if (block.getType() == portalMaterial) {
+			if (block.getType() == Material.NETHER_PORTAL) {
 				removeDamagedPortals(block);
 			}
 		}
@@ -266,7 +263,6 @@ public class BlockListener implements Listener {
 	@EventHandler(priority = EventPriority.HIGHEST, ignoreCancelled = true)
 	public void onEntityChangeBlock(EntityChangeBlockEvent event) {
 		Block block = event.getBlock();
-		//TODO check what 1.8 uses instead of event.getBlockData()
 		updateBlockCaches(block, BlockType.of(event.getBlock()), false);
 	}
 	

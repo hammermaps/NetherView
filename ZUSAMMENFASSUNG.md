@@ -6,8 +6,8 @@ Das Spigot-Plugin wurde erfolgreich auf die aktuelle PaperMC-Version aktualisier
 ## Durchgeführte Änderungen
 
 ### 1. Maven POM (pom.xml)
-- **Java-Version**: Von 1.8 auf 17 aktualisiert (PaperMC-Anforderung)
-- **API-Abhängigkeit**: Von `spigot-api:1.15.2` auf `paper-api:1.21.4` geändert
+- **Java-Version**: Von 1.8 auf 21 aktualisiert (PaperMC 1.21.8 Anforderung)
+- **API-Abhängigkeit**: Von `spigot-api:1.15.2` auf `paper-api:1.21.8` geändert
 - **Repository**: PaperMC Maven Repository hinzugefügt (`https://repo.papermc.io/repository/maven-public/`)
 - **ProtocolLib**: Von Version 4.5.0 auf 5.3.0 aktualisiert
 - **JUnit**: Von Version 5.6.1 auf 5.10.1 aktualisiert
@@ -47,12 +47,12 @@ Es waren KEINE Breaking Changes am Code erforderlich, weil:
 ## Systemanforderungen
 
 ### Server
-- **PaperMC 1.21.4** oder höher
-- Kann auch auf älteren PaperMC-Versionen laufen (1.20.x, 1.19.x)
+- **PaperMC 1.21.8** oder höher
+- Kann auch auf älteren PaperMC-Versionen laufen (1.21.x, 1.20.x, 1.19.x)
 - Potentiell auch auf Spigot 1.21+, aber PaperMC wird empfohlen
 
 ### Java
-- **Java 17 oder höher** erforderlich
+- **Java 21 oder höher** erforderlich
 
 ### Abhängigkeiten
 - **ProtocolLib 5.3.0** (muss im plugins-Ordner sein)
@@ -60,7 +60,7 @@ Es waren KEINE Breaking Changes am Code erforderlich, weil:
 ## Build-Prozess
 
 ### Voraussetzungen
-1. Java 17+ installiert
+1. Java 21+ installiert
 2. Maven 3.6+ installiert
 3. Netzwerkzugriff auf:
    - `repo.papermc.io`
@@ -114,7 +114,7 @@ Die Änderungen befinden sich im Branch: **`copilot/update-spigot-plugin-to-pape
 ## Nächste Schritte
 
 1. **Build testen**: In einer Umgebung mit vollständigem Netzwerkzugriff bauen
-2. **Runtime-Tests**: Auf einem PaperMC 1.21.4 Server testen
+2. **Runtime-Tests**: Auf einem PaperMC 1.21.8 Server testen
 3. **Merge**: Bei erfolgreichen Tests in den Hauptbranch mergen
 4. **Release**: Neue Version auf SpigotMC veröffentlichen
 

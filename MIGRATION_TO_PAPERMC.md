@@ -6,12 +6,12 @@ This document describes the migration from Spigot API to PaperMC API for the Net
 
 ### 1. Java Version Update
 - **Old**: Java 1.8
-- **New**: Java 17
-- **Reason**: PaperMC 1.21+ requires Java 17 as minimum version
+- **New**: Java 21
+- **Reason**: PaperMC 1.21.8 requires Java 21 as minimum version
 
 ### 2. API Dependency
 - **Old**: `org.spigotmc:spigot-api:1.15.2-R0.1-SNAPSHOT`
-- **New**: `io.papermc.paper:paper-api:1.21.4-R0.1-SNAPSHOT`
+- **New**: `io.papermc.paper:paper-api:1.21.8-R0.1-SNAPSHOT`
 - **Reason**: PaperMC is a high-performance fork of Spigot with better API and features
 
 ### 3. API Version in plugin.yml
@@ -84,7 +84,8 @@ If building in an environment with limited internet access:
 ## Deployment
 
 The plugin can be deployed on:
-- PaperMC 1.21.4 and newer
+- PaperMC 1.21.8 and newer
+- PaperMC 1.21.x (fully compatible)
 - PaperMC 1.20.x (should work with api-version: 1.21)
 - PaperMC 1.19.x and older (with potential feature limitations)
 - Spigot servers (backward compatible, though PaperMC is recommended)

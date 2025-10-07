@@ -15,9 +15,9 @@
 
 | Component | Before | After |
 |-----------|--------|-------|
-| Java Version | 1.8 | **17** |
+| Java Version | 1.8 | **21** |
 | API Dependency | org.spigotmc:spigot-api | **io.papermc.paper:paper-api** |
-| API Version | 1.15.2-R0.1-SNAPSHOT | **1.21.4-R0.1-SNAPSHOT** |
+| API Version | 1.15.2-R0.1-SNAPSHOT | **1.21.8-R0.1-SNAPSHOT** |
 | ProtocolLib | 4.5.0 | **5.3.0** |
 | JUnit | 5.6.1 | **5.10.1** |
 | Maven Compiler Plugin | 3.7.0 | **3.11.0** |
@@ -161,7 +161,7 @@ mvn clean package
 ## Next Steps
 
 1. **Test Build**: In environment with network access, run `mvn clean package`
-2. **Test Runtime**: Deploy on PaperMC 1.21.4 test server
+2. **Test Runtime**: Deploy on PaperMC 1.21.8 test server
 3. **Verify Features**: Test all portal viewing and linking functionality
 4. **Merge**: If tests pass, merge to main branch
 5. **Release**: Publish updated version to SpigotMC resources

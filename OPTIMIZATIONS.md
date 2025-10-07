@@ -231,10 +231,10 @@ Map<Portal, WeakReference<BlockCache>> caches = new WeakHashMap<>();
 - ✅ Update API versions
 
 ### Phase 2: Quick Wins
-- [ ] Implement virtual threads for cache generation
-- [ ] Use modern switch expressions
-- [ ] Convert DTOs to records
-- [ ] Update collection APIs
+- ✅ Implement virtual threads for cache generation
+- ✅ Use modern switch expressions
+- ✅ Convert DTOs to records (cache pairs)
+- ✅ Update collection APIs (N/A - no applicable usage found)
 
 ### Phase 3: Performance
 - [ ] Async block cache generation

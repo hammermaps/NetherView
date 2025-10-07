@@ -91,6 +91,7 @@ public final class NetherView extends JavaPlugin {
 		savePortalsToConfig();
 		viewHandler.reset();
 		portalHandler.reset();
+		portalHandler.shutdown();
 	}
 	
 	public int getPortalProjectionDist() {

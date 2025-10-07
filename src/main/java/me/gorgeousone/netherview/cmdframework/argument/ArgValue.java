@@ -39,20 +39,10 @@ public class ArgValue {
 		
 		try {
 			switch (type) {
-				
-				case INTEGER:
-					intVal = Integer.parseInt(value);
-				
-				case DECIMAL:
-					decimalVal = Double.parseDouble(value);
-				
-				case STRING:
-					stringVal = value;
-					break;
-				
-				case BOOLEAN:
-					booleanVal = Boolean.parseBoolean(value);
-					break;
+				case INTEGER -> intVal = Integer.parseInt(value);
+				case DECIMAL -> decimalVal = Double.parseDouble(value);
+				case STRING -> stringVal = value;
+				case BOOLEAN -> booleanVal = Boolean.parseBoolean(value);
 			}
 			
 		} catch (Exception e) {

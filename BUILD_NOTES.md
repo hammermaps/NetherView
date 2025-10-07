@@ -7,7 +7,7 @@ This branch contains the complete migration from Spigot API to PaperMC API. All 
 ## Changes Made
 
 ### 1. Updated Dependencies (pom.xml)
-- **Paper API**: Changed from `org.spigotmc:spigot-api:1.15.2` to `io.papermc.paper:paper-api:1.21.4-R0.1-SNAPSHOT`
+- **Paper API**: Changed from `org.spigotmc:spigot-api:1.15.2` to `io.papermc.paper:paper-api:1.21.8-R0.1-SNAPSHOT`
 - **Java Version**: Upgraded from Java 8 to Java 17
 - **Maven Compiler Plugin**: Updated from 3.7.0 to 3.11.0
 - **Maven Shade Plugin**: Updated from 3.1.0 to 3.5.1
@@ -117,9 +117,9 @@ mvn test
 For full integration testing, deploy on a PaperMC server:
 
 1. **Server Setup**:
-   - Download PaperMC 1.21.4 from papermc.io/downloads
+   - Download PaperMC 1.21.8 from papermc.io/downloads
    - Ensure Java 17+ is installed
-   - Install ProtocolLib dependency
+   - Install ProtocolLib 5.3.0+ dependency
 
 2. **Plugin Deployment**:
    - Copy `target/netherview-1.2.1.jar` to server's `plugins/` folder
@@ -162,6 +162,6 @@ The plugin should also work on:
 
 ## Conclusion
 
-The migration from Spigot API to PaperMC API is **complete and ready for testing**. All code changes have been made, and the plugin should work correctly on PaperMC 1.21.4+ servers with Java 17+.
+The migration from Spigot API to PaperMC API is **complete and ready for testing**. All code changes have been made, and the plugin should work correctly on PaperMC 1.21.8+ servers with Java 17+.
 
 The only remaining step is to test the build in an environment with full network access and then perform runtime testing on an actual PaperMC server.

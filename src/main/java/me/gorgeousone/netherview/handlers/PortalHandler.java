@@ -4,6 +4,7 @@ import me.gorgeousone.netherview.NetherView;
 import me.gorgeousone.netherview.blockcache.BlockCache;
 import me.gorgeousone.netherview.blockcache.BlockCacheFactory;
 import me.gorgeousone.netherview.blockcache.ProjectionCache;
+import me.gorgeousone.netherview.blockcache.ProjectionCachePair;
 import me.gorgeousone.netherview.blockcache.Transform;
 import me.gorgeousone.netherview.blocktype.Axis;
 import me.gorgeousone.netherview.portal.Portal;
@@ -22,7 +23,6 @@ import org.bukkit.util.Vector;
 import java.time.Duration;
 import java.time.LocalTime;
 import java.time.temporal.ChronoUnit;
-import java.util.AbstractMap;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -281,7 +281,7 @@ public class PortalHandler {
 		ProjectionCache frontProjection = new ProjectionCache(portal, backCache, linkTransform);
 		ProjectionCache backProjection = new ProjectionCache(portal, frontCache, linkTransform);
 		
-		portal.setProjectionCaches(new AbstractMap.SimpleEntry<>(frontProjection, backProjection));
+		portal.setProjectionCaches(new ProjectionCachePair(frontProjection, backProjection));
 		addPortalToExpirationTimer(portal);
 	}
 	

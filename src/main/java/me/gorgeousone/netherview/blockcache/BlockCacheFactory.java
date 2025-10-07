@@ -11,15 +11,14 @@ import org.bukkit.block.Block;
 import org.bukkit.block.BlockFace;
 import org.bukkit.util.Vector;
 
-import java.util.AbstractMap;
 import java.util.HashMap;
 import java.util.Map;
 
 public class BlockCacheFactory {
 	
-	public static Map.Entry<BlockCache, BlockCache> createBlockCaches(Portal portal,
-	                                                                  int viewDist,
-	                                                                  BlockType cacheBorderBlockType) {
+	public static BlockCachePair createBlockCaches(Portal portal,
+	                                               int viewDist,
+	                                               BlockType cacheBorderBlockType) {
 		
 		//theoretically the view distance needs to be increased by 1 for the extra layer of border around the cuboid of blocks.
 		//but somehow it's 2. Don't ask me.
@@ -57,7 +56,7 @@ public class BlockCacheFactory {
 				portalFacing.clone().multiply(-1),
 				cacheBorderBlockType);
 		
-		return new AbstractMap.SimpleEntry<>(front, back);
+		return new BlockCachePair(front, back);
 	}
 	
 	//TODO rather copy the blocs into an empty BlockCache?

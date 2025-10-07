@@ -15,7 +15,7 @@
 
 | Component | Before | After |
 |-----------|--------|-------|
-| Java Version | 1.8 | **17** |
+| Java Version | 1.8 | **21** |
 | API Dependency | org.spigotmc:spigot-api | **io.papermc.paper:paper-api** |
 | API Version | 1.15.2-R0.1-SNAPSHOT | **1.21.8-R0.1-SNAPSHOT** |
 | ProtocolLib | 4.5.0 | **5.3.0** |

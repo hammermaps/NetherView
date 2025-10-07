@@ -5,7 +5,7 @@ More infos and demonstrations at: [SpigotMc](https://www.spigotmc.org/resources/
 
 ## Requirements
 - **Server**: PaperMC 1.21.8+ (or compatible version)
-- **Java**: Java 17 or higher
+- **Java**: Java 21 or higher
 - **Dependencies**: ProtocolLib 5.3.0+
 
 ## Building

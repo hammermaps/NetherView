@@ -6,8 +6,8 @@ This document describes the migration from Spigot API to PaperMC API for the Net
 
 ### 1. Java Version Update
 - **Old**: Java 1.8
-- **New**: Java 17
-- **Reason**: PaperMC 1.21+ requires Java 17 as minimum version
+- **New**: Java 21
+- **Reason**: PaperMC 1.21.8 requires Java 21 as minimum version
 
 ### 2. API Dependency
 - **Old**: `org.spigotmc:spigot-api:1.15.2-R0.1-SNAPSHOT`

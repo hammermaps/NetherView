@@ -6,7 +6,7 @@ Das Spigot-Plugin wurde erfolgreich auf die aktuelle PaperMC-Version aktualisier
 ## Durchgeführte Änderungen
 
 ### 1. Maven POM (pom.xml)
-- **Java-Version**: Von 1.8 auf 17 aktualisiert (PaperMC-Anforderung)
+- **Java-Version**: Von 1.8 auf 21 aktualisiert (PaperMC 1.21.8 Anforderung)
 - **API-Abhängigkeit**: Von `spigot-api:1.15.2` auf `paper-api:1.21.8` geändert
 - **Repository**: PaperMC Maven Repository hinzugefügt (`https://repo.papermc.io/repository/maven-public/`)
 - **ProtocolLib**: Von Version 4.5.0 auf 5.3.0 aktualisiert
@@ -52,7 +52,7 @@ Es waren KEINE Breaking Changes am Code erforderlich, weil:
 - Potentiell auch auf Spigot 1.21+, aber PaperMC wird empfohlen
 
 ### Java
-- **Java 17 oder höher** erforderlich
+- **Java 21 oder höher** erforderlich
 
 ### Abhängigkeiten
 - **ProtocolLib 5.3.0** (muss im plugins-Ordner sein)
@@ -60,7 +60,7 @@ Es waren KEINE Breaking Changes am Code erforderlich, weil:
 ## Build-Prozess
 
 ### Voraussetzungen
-1. Java 17+ installiert
+1. Java 21+ installiert
 2. Maven 3.6+ installiert
 3. Netzwerkzugriff auf:
    - `repo.papermc.io`

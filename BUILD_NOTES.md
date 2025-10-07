@@ -8,7 +8,7 @@ This branch contains the complete migration from Spigot API to PaperMC API. All 
 
 ### 1. Updated Dependencies (pom.xml)
 - **Paper API**: Changed from `org.spigotmc:spigot-api:1.15.2` to `io.papermc.paper:paper-api:1.21.8-R0.1-SNAPSHOT`
-- **Java Version**: Upgraded from Java 8 to Java 17
+- **Java Version**: Upgraded from Java 8 to Java 21
 - **Maven Compiler Plugin**: Updated from 3.7.0 to 3.11.0
 - **Maven Shade Plugin**: Updated from 3.1.0 to 3.5.1
 - **JUnit**: Updated from 5.6.1 to 5.10.1
@@ -60,7 +60,7 @@ The codebase does NOT require any breaking changes because:
 ## Build Instructions
 
 ### Prerequisites
-1. Java 17 or higher installed
+1. Java 21 or higher installed
 2. Maven 3.6+ installed
 3. Network access to:
    - `repo.papermc.io` (PaperMC repository)
@@ -118,7 +118,7 @@ For full integration testing, deploy on a PaperMC server:
 
 1. **Server Setup**:
    - Download PaperMC 1.21.8 from papermc.io/downloads
-   - Ensure Java 17+ is installed
+   - Ensure Java 21+ is installed
    - Install ProtocolLib 5.3.0+ dependency
 
 2. **Plugin Deployment**:
@@ -162,6 +162,6 @@ The plugin should also work on:
 
 ## Conclusion
 
-The migration from Spigot API to PaperMC API is **complete and ready for testing**. All code changes have been made, and the plugin should work correctly on PaperMC 1.21.8+ servers with Java 17+.
+The migration from Spigot API to PaperMC API is **complete and ready for testing**. All code changes have been made, and the plugin should work correctly on PaperMC 1.21.8+ servers with Java 21+.
 
 The only remaining step is to test the build in an environment with full network access and then perform runtime testing on an actual PaperMC server.

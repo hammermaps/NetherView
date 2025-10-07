@@ -29,6 +29,7 @@ import java.util.HashSet;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
+import java.util.PriorityQueue;
 import java.util.Set;
 import java.util.UUID;
 import java.util.concurrent.ExecutorService;
@@ -47,6 +48,12 @@ public class PortalHandler {
 	// Virtual thread executor for async cache generation (Java 21)
 	private final ExecutorService cacheExecutor;
 	
+	// Phase 3: Spatial indexing for O(1) portal lookups
+	private final SpatialPortalIndex spatialIndex;
+	
+	// Phase 3: Priority queue for O(1) next-expiring cache access
+	private final PriorityQueue<CacheExpirationEntry> expirationQueue;
+	
 	public PortalHandler(NetherView main) {
 		
 		this.main = main;
@@ -57,12 +64,18 @@ public class PortalHandler {
 		
 		// Initialize virtual thread executor for cache generation
 		cacheExecutor = Executors.newVirtualThreadPerTaskExecutor();
+		
+		// Phase 3 optimizations
+		spatialIndex = new SpatialPortalIndex();
+		expirationQueue = new PriorityQueue<>();
 	}
 	
 	public void reset() {
 		
 		worldsWithPortals.clear();
 		recentlyViewedPortals.clear();
+		spatialIndex.clear();
+		expirationQueue.clear();
 	}
 	
 	/**
@@ -74,11 +87,13 @@ public class PortalHandler {
 	}
 	
 	public Set<Portal> getPortals(World world) {
-		return worldsWithPortals.getOrDefault(world.getUID(), new HashSet<>());
+		// Phase 3: Use spatial index for portal retrieval
+		return spatialIndex.getPortals(world);
 	}
 	
 	public boolean hasPortals(World world) {
-		return worldsWithPortals.containsKey(world.getUID());
+		// Phase 3: Use spatial index for existence check
+		return spatialIndex.hasPortals(world);
 	}
 	
 	/**
@@ -107,11 +122,11 @@ public class PortalHandler {
 	 * If none was found it will  be tried to add the portal related to this block.
 	 */
 	public Portal getPortalByBlock(Block portalBlock) {
+		// Phase 3: Use spatial index for O(1) portal lookup by block
+		Portal portal = spatialIndex.getPortalByBlock(portalBlock);
 		
-		for (Portal portal : getPortals(portalBlock.getWorld())) {
-			if (portal.getPortalBlocks().contains(portalBlock)) {
-				return portal;
-			}
+		if (portal != null) {
+			return portal;
 		}
 		
 		return addPortalStructure(portalBlock);
@@ -141,25 +156,13 @@ public class PortalHandler {
 	 * @param mustBeLinked specify if the returned portal should be linked already
 	 */
 	public Portal getNearestPortal(Location playerLoc, boolean mustBeLinked) {
-		
-		Portal nearestPortal = null;
-		double minDist = -1;
-		
-		for (Portal portal : getPortals(playerLoc.getWorld())) {
-			
-			if (mustBeLinked && !portal.isLinked()) {
-				continue;
-			}
-			
-			double dist = portal.getLocation().distanceSquared(playerLoc);
-			
-			if (nearestPortal == null || dist < minDist) {
-				nearestPortal = portal;
-				minDist = dist;
-			}
-		}
-		
-		return nearestPortal;
+		// Phase 3: Use spatial index for optimized nearest portal search
+		return spatialIndex.getNearestPortal(
+			playerLoc.getWorld(),
+			playerLoc.getBlockX(),
+			playerLoc.getBlockZ(),
+			mustBeLinked
+		);
 	}
 	
 	/**
@@ -237,6 +240,9 @@ public class PortalHandler {
 		worldsWithPortals.putIfAbsent(worldID, new HashSet<>());
 		worldsWithPortals.get(worldID).add(portal);
 		
+		// Phase 3: Add portal to spatial index
+		spatialIndex.addPortal(portal);
+		
 		if (main.debugMessagesEnabled()) {
 			Bukkit.getConsoleSender().sendMessage(ChatColor.DARK_GRAY + "[Debug] Located portal at " + portal.toString());
 		}
@@ -286,8 +292,12 @@ public class PortalHandler {
 	}
 	
 	private void addPortalToExpirationTimer(Portal portal) {
+		long now = System.currentTimeMillis();
+		recentlyViewedPortals.put(portal, now);
 		
-		recentlyViewedPortals.put(portal, System.currentTimeMillis());
+		// Phase 3: Add to priority queue for O(1) next-expiring access
+		long expirationTime = now + cacheExpirationDuration;
+		expirationQueue.offer(new CacheExpirationEntry(portal, expirationTime));
 		
 		if (expirationTimer == null) {
 			startCacheExpirationTimer();
@@ -295,7 +305,13 @@ public class PortalHandler {
 	}
 	
 	public void updateExpirationTime(Portal portal) {
-		recentlyViewedPortals.put(portal, System.currentTimeMillis());
+		long now = System.currentTimeMillis();
+		recentlyViewedPortals.put(portal, now);
+		
+		// Phase 3: Add updated expiration to priority queue
+		// Note: Old entries will be filtered out when processed
+		long expirationTime = now + cacheExpirationDuration;
+		expirationQueue.offer(new CacheExpirationEntry(portal, expirationTime));
 	}
 	
 	/**
@@ -317,7 +333,11 @@ public class PortalHandler {
 		portal.removeLink();
 		
 		recentlyViewedPortals.remove(portal);
-		getPortals(portal.getWorld()).remove(portal);
+		worldsWithPortals.get(portal.getWorld().getUID()).remove(portal);
+		
+		// Phase 3: Remove from spatial index
+		spatialIndex.removePortal(portal);
+		// Note: Expired entries in priority queue will be filtered when processed
 	}
 	
 	/**
@@ -475,28 +495,50 @@ public class PortalHandler {
 		expirationTimer = new BukkitRunnable() {
 			@Override
 			public void run() {
-				
-				Iterator<Map.Entry<Portal, Long>> entries = recentlyViewedPortals.entrySet().iterator();
+				// Phase 3: Use priority queue for O(1) next-expiring cache access
 				long now = System.currentTimeMillis();
 				
-				while (entries.hasNext()) {
+				// Process all expired entries from the priority queue
+				while (!expirationQueue.isEmpty()) {
+					CacheExpirationEntry entry = expirationQueue.peek();
 					
-					Map.Entry<Portal, Long> entry = entries.next();
-					long timeSinceLastUse = now - entry.getValue();
-					Portal portal = entry.getKey();
+					// Stop if next entry hasn't expired yet
+					if (entry.expirationTime() > now) {
+						break;
+					}
 					
-					if (timeSinceLastUse > cacheExpirationDuration) {
-						portal.removeProjectionCaches();
-						portal.removeBlockCaches();
-						entries.remove();
-						
+					// Remove from queue
+					expirationQueue.poll();
+					Portal portal = entry.portal();
+					
+					// Check if this entry is still valid (not updated or removed)
+					Long lastViewTime = recentlyViewedPortals.get(portal);
+					if (lastViewTime == null) {
+						// Portal was removed, skip
+						continue;
+					}
+					
+					long actualExpirationTime = lastViewTime + cacheExpirationDuration;
+					if (actualExpirationTime > now) {
+						// Portal was updated, skip this old entry
+						continue;
+					}
+					
+					// Remove expired cache
+					portal.removeProjectionCaches();
+					portal.removeBlockCaches();
+					recentlyViewedPortals.remove(portal);
+					
+					if (main.debugMessagesEnabled()) {
 						Bukkit.getConsoleSender().sendMessage(ChatColor.DARK_GRAY + "[Debug] Removed cached blocks of portal " + portal.toString());
 					}
 				}
 				
+				// Stop timer if no more portals to expire
 				if (recentlyViewedPortals.isEmpty()) {
 					this.cancel();
 					expirationTimer = null;
+					expirationQueue.clear();
 				}
 			}
 		};

@@ -263,7 +263,6 @@ public class BlockListener implements Listener {
 	@EventHandler(priority = EventPriority.HIGHEST, ignoreCancelled = true)
 	public void onEntityChangeBlock(EntityChangeBlockEvent event) {
 		Block block = event.getBlock();
-		//TODO check what 1.8 uses instead of event.getBlockData()
 		updateBlockCaches(block, BlockType.of(event.getBlock()), false);
 	}
 	

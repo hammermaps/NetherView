@@ -4,6 +4,7 @@ import me.gorgeousone.netherview.NetherView;
 import me.gorgeousone.netherview.blockcache.BlockCache;
 import me.gorgeousone.netherview.blockcache.BlockCacheFactory;
 import me.gorgeousone.netherview.blockcache.ProjectionCache;
+import me.gorgeousone.netherview.blockcache.ProjectionCachePair;
 import me.gorgeousone.netherview.blockcache.Transform;
 import me.gorgeousone.netherview.blocktype.Axis;
 import me.gorgeousone.netherview.portal.Portal;
@@ -22,7 +23,6 @@ import org.bukkit.util.Vector;
 import java.time.Duration;
 import java.time.LocalTime;
 import java.time.temporal.ChronoUnit;
-import java.util.AbstractMap;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -31,6 +31,8 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.UUID;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
 
 public class PortalHandler {
 	
@@ -42,6 +44,9 @@ public class PortalHandler {
 	private BukkitRunnable expirationTimer;
 	private long cacheExpirationDuration;
 	
+	// Virtual thread executor for async cache generation (Java 21)
+	private final ExecutorService cacheExecutor;
+	
 	public PortalHandler(NetherView main) {
 		
 		this.main = main;
@@ -49,12 +54,23 @@ public class PortalHandler {
 		worldsWithPortals = new HashMap<>();
 		recentlyViewedPortals = new HashMap<>();
 		cacheExpirationDuration = Duration.ofMinutes(10).toMillis();
+		
+		// Initialize virtual thread executor for cache generation
+		cacheExecutor = Executors.newVirtualThreadPerTaskExecutor();
 	}
 	
 	public void reset() {
 		
 		worldsWithPortals.clear();
 		recentlyViewedPortals.clear();
+	}
+	
+	/**
+	 * Shuts down the virtual thread executor for cache generation.
+	 * Should be called when the plugin is disabled.
+	 */
+	public void shutdown() {
+		cacheExecutor.shutdown();
 	}
 	
 	public Set<Portal> getPortals(World world) {
@@ -230,16 +246,19 @@ public class PortalHandler {
 	
 	private void loadBlockCachesOf(Portal portal) {
 		
-		portal.setBlockCaches(BlockCacheFactory.createBlockCaches(
-				portal,
-				main.getPortalProjectionDist(),
-				main.getWorldBorderBlockType(portal.getWorld().getEnvironment())));
-		
-		addPortalToExpirationTimer(portal);
-		
-		if (main.debugMessagesEnabled()) {
-			Bukkit.getConsoleSender().sendMessage(ChatColor.DARK_GRAY + "[Debug] Loaded block data for portal " + portal.toString());
-		}
+		// Use virtual threads for async cache generation (Java 21 optimization)
+		cacheExecutor.submit(() -> {
+			portal.setBlockCaches(BlockCacheFactory.createBlockCaches(
+					portal,
+					main.getPortalProjectionDist(),
+					main.getWorldBorderBlockType(portal.getWorld().getEnvironment())));
+			
+			addPortalToExpirationTimer(portal);
+			
+			if (main.debugMessagesEnabled()) {
+				Bukkit.getConsoleSender().sendMessage(ChatColor.DARK_GRAY + "[Debug] Loaded block data for portal " + portal.toString());
+			}
+		});
 	}
 	
 	public void loadProjectionCachesOf(Portal portal) {
@@ -262,7 +281,7 @@ public class PortalHandler {
 		ProjectionCache frontProjection = new ProjectionCache(portal, backCache, linkTransform);
 		ProjectionCache backProjection = new ProjectionCache(portal, frontCache, linkTransform);
 		
-		portal.setProjectionCaches(new AbstractMap.SimpleEntry<>(frontProjection, backProjection));
+		portal.setProjectionCaches(new ProjectionCachePair(frontProjection, backProjection));
 		addPortalToExpirationTimer(portal);
 	}
 	

@@ -1,7 +1,9 @@
 package me.gorgeousone.netherview.portal;
 
 import me.gorgeousone.netherview.blockcache.BlockCache;
+import me.gorgeousone.netherview.blockcache.BlockCachePair;
 import me.gorgeousone.netherview.blockcache.ProjectionCache;
+import me.gorgeousone.netherview.blockcache.ProjectionCachePair;
 import me.gorgeousone.netherview.blocktype.Axis;
 import me.gorgeousone.netherview.threedstuff.AxisAlignedRect;
 import me.gorgeousone.netherview.threedstuff.BlockVec;
@@ -11,7 +13,6 @@ import org.bukkit.World;
 import org.bukkit.block.Block;
 
 import java.util.HashSet;
-import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
 
@@ -29,8 +30,8 @@ public class Portal {
 	
 	private Portal counterPortal;
 	
-	private Map.Entry<BlockCache, BlockCache> blockCaches;
-	private Map.Entry<ProjectionCache, ProjectionCache> projectionCaches;
+	private BlockCachePair blockCaches;
+	private ProjectionCachePair projectionCaches;
 	
 	private boolean exists;
 	
@@ -124,7 +125,7 @@ public class Portal {
 		return exists;
 	}
 	
-	public void setBlockCaches(Map.Entry<BlockCache, BlockCache> blockCaches) {
+	public void setBlockCaches(BlockCachePair blockCaches) {
 		this.blockCaches = blockCaches;
 	}
 	
@@ -137,14 +138,14 @@ public class Portal {
 	}
 	
 	public BlockCache getFrontCache() {
-		return blockCaches.getKey();
+		return blockCaches.front();
 	}
 	
 	public BlockCache getBackCache() {
-		return blockCaches.getValue();
+		return blockCaches.back();
 	}
 	
-	public void setProjectionCaches(Map.Entry<ProjectionCache, ProjectionCache> projectionCaches) {
+	public void setProjectionCaches(ProjectionCachePair projectionCaches) {
 		this.projectionCaches = projectionCaches;
 	}
 	
@@ -157,11 +158,11 @@ public class Portal {
 	}
 	
 	public ProjectionCache getFrontProjection() {
-		return projectionCaches.getKey();
+		return projectionCaches.front();
 	}
 	
 	public ProjectionCache getBackProjection() {
-		return projectionCaches.getValue();
+		return projectionCaches.back();
 	}
 	
 	@Override

@@ -5,7 +5,7 @@ import org.bukkit.Material;
 import org.bukkit.block.Block;
 import org.bukkit.block.BlockState;
 
-public abstract class BlockType {
+public sealed abstract class BlockType permits AquaticBlockType {
 	
 	public static BlockType of(Block block) {
 		return new AquaticBlockType(block);

@@ -10,7 +10,7 @@ NetherView 2.0 removes support for legacy Minecraft versions (1.8-1.12) and requ
 - **Java**: Now requires Java 21 (previously Java 8)
 - **Minecraft**: Now requires 1.21+ (previously supported back to 1.8)
 - **API Version**: Updated to 1.21 (previously 1.13)
-- **ProtocolLib**: Now requires 5.1.0+ (previously 4.5.0)
+- **ProtocolLib**: Now requires 5.3.0+ (previously 4.5.0)
 
 ### 2. Removed Code
 - **LegacyBlockType**: Completely removed. The plugin now only uses modern BlockData API.
@@ -43,7 +43,7 @@ The plugin will automatically use modern defaults:
    Your server must be running Minecraft 1.21 or higher (Spigot, Paper, Purpur, etc.)
 
 3. **Update ProtocolLib**
-   Download ProtocolLib 5.1.0 or higher from [SpigotMC](https://www.spigotmc.org/resources/protocollib.1997/)
+   Download ProtocolLib 5.3.0 or higher from [SpigotMC](https://www.spigotmc.org/resources/protocollib.1997/)
 
 4. **Backup Your Data**
    ```bash
@@ -84,14 +84,14 @@ The plugin will automatically use modern defaults:
    
    <dependencies>
        <dependency>
-           <groupId>org.spigotmc</groupId>
-           <artifactId>spigot-api</artifactId>
-           <version>1.21.1-R0.1-SNAPSHOT</version>
+           <groupId>io.papermc.paper</groupId>
+           <artifactId>paper-api</artifactId>
+           <version>1.21.8-R0.1-SNAPSHOT</version>
        </dependency>
        <dependency>
            <groupId>com.comphenix.protocol</groupId>
            <artifactId>ProtocolLib</artifactId>
-           <version>5.1.0</version>
+           <version>5.3.0</version>
        </dependency>
    </dependencies>
    ```
@@ -117,7 +117,7 @@ The plugin will automatically use modern defaults:
 | NetherView Version | Minecraft Version | Java Version | ProtocolLib |
 |-------------------|-------------------|--------------|-------------|
 | 1.2.1 and earlier | 1.8 - 1.20       | 8+           | 4.5.0+      |
-| 2.0+              | 1.21+            | 21+          | 5.1.0+      |
+| 2.0+              | 1.21+            | 21+          | 5.3.0+      |
 
 ## Rollback Instructions
 
@@ -159,7 +159,7 @@ If you need to revert to the old version:
 If you encounter issues during migration:
 
 1. Check the console for error messages
-2. Verify all requirements are met (Java 21, MC 1.21+, ProtocolLib 5.1.0+)
+2. Verify all requirements are met (Java 21, MC 1.21.8+, ProtocolLib 5.3.0+)
 3. Review this guide and [OPTIMIZATIONS.md](OPTIMIZATIONS.md)
 4. Report issues on [GitHub](https://github.com/hammermaps/NetherView/issues) or [SpigotMC](https://www.spigotmc.org/resources/nether-view.78885/)
 

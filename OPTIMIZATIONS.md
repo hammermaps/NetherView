@@ -237,10 +237,10 @@ Map<Portal, WeakReference<BlockCache>> caches = new WeakHashMap<>();
 - ✅ Update collection APIs (N/A - no applicable usage found)
 
 ### Phase 3: Performance
-- [ ] Async block cache generation
-- [ ] Spatial indexing for portals
-- [ ] Block update batching
-- [ ] Cache optimization
+- ✅ Async block cache generation (completed in Phase 2 via virtual threads)
+- ✅ Spatial indexing for portals
+- ⏭️ Block update batching (deferred - requires extensive listener refactoring)
+- ✅ Cache optimization (priority queue for expiration timer)
 
 ### Phase 4: Cross-Server (Optional)
 - [ ] Redis integration for portal sync

@@ -12,24 +12,17 @@ import org.bukkit.plugin.RegisteredServiceProvider;
 import org.bukkit.plugin.ServicePriority;
 
 import javax.net.ssl.HttpsURLConnection;
-import java.io.BufferedReader;
-import java.io.ByteArrayOutputStream;
-import java.io.DataOutputStream;
-import java.io.File;
-import java.io.IOException;
-import java.io.InputStreamReader;
+import java.io.*;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.net.URL;
 import java.nio.charset.StandardCharsets;
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.List;
-import java.util.Map;
-import java.util.Timer;
-import java.util.TimerTask;
-import java.util.UUID;
+import java.util.*;
 import java.util.concurrent.Callable;
+import java.util.concurrent.Executors;
+import java.util.concurrent.ScheduledExecutorService;
+import java.util.concurrent.ThreadFactory;
+import java.util.concurrent.TimeUnit;
 import java.util.logging.Level;
 import java.util.zip.GZIPOutputStream;
 
@@ -40,7 +33,7 @@ import java.util.zip.GZIPOutputStream;
  */
 @SuppressWarnings({"WeakerAccess", "unused"})
 public class Metrics {
-	
+
 	static {
 		// You can use the property to disable the check in your test environment
 		if (System.getProperty("bstats.relocatecheck") == null || !System.getProperty("bstats.relocatecheck").equals("false")) {
@@ -54,41 +47,48 @@ public class Metrics {
 			}
 		}
 	}
-	
+
+	// This ThreadFactory enforces the naming convention for our Threads
+	private final ThreadFactory threadFactory = task -> new Thread(task, "bStats-Metrics");
+
+	// Executor service for requests
+	// We use an executor service because the Bukkit scheduler is affected by server lags
+	private final ScheduledExecutorService scheduler = Executors.newScheduledThreadPool(1, threadFactory);
+
 	// The version of this bStats class
 	public static final int B_STATS_VERSION = 1;
-	
+
 	// The url to which the data is sent
 	private static final String URL = "https://bStats.org/submitData/bukkit";
-	
+
 	// Is bStats enabled on this server?
 	private boolean enabled;
-	
+
 	// Should failed requests be logged?
 	private static boolean logFailedRequests;
-	
+
 	// Should the sent data be logged?
 	private static boolean logSentData;
-	
+
 	// Should the response text be logged?
 	private static boolean logResponseStatusText;
-	
+
 	// The uuid of the server
 	private static String serverUUID;
-	
+
 	// The plugin
 	private final Plugin plugin;
-	
+
 	// The plugin id
 	private final int pluginId;
-	
+
 	// A list with all custom charts
 	private final List<CustomChart> charts = new ArrayList<>();
-	
+
 	/**
 	 * Class constructor.
 	 *
-	 * @param plugin   The plugin which stats should be submitted.
+	 * @param plugin The plugin which stats should be submitted.
 	 * @param pluginId The id of the plugin.
 	 *                 It can be found at <a href="https://bstats.org/what-is-my-plugin-id">What is my plugin id?</a>
 	 */
@@ -98,15 +98,15 @@ public class Metrics {
 		}
 		this.plugin = plugin;
 		this.pluginId = pluginId;
-		
+
 		// Get the config file
 		File bStatsFolder = new File(plugin.getDataFolder().getParentFile(), "bStats");
 		File configFile = new File(bStatsFolder, "config.yml");
 		YamlConfiguration config = YamlConfiguration.loadConfiguration(configFile);
-		
+
 		// Check if the config file exists
 		if (!config.isSet("serverUuid")) {
-			
+
 			// Add default values
 			config.addDefault("enabled", true);
 			// Every server gets it's unique random id.
@@ -117,27 +117,26 @@ public class Metrics {
 			config.addDefault("logSentData", false);
 			// Should the response text be logged?
 			config.addDefault("logResponseStatusText", false);
-			
+
 			// Inform the server owners about bStats
 			config.options().header(
 					"bStats collects some data for plugin authors like how many servers are using their plugins.\n" +
-					"To honor their work, you should not disable it.\n" +
-					"This has nearly no effect on the server performance!\n" +
-					"Check out https://bStats.org/ to learn more :)"
+							"To honor their work, you should not disable it.\n" +
+							"This has nearly no effect on the server performance!\n" +
+							"Check out https://bStats.org/ to learn more :)"
 			).copyDefaults(true);
 			try {
 				config.save(configFile);
-			} catch (IOException ignored) {
-			}
+			} catch (IOException ignored) { }
 		}
-		
+
 		// Load the data
 		enabled = config.getBoolean("enabled", true);
 		serverUUID = config.getString("serverUuid");
 		logFailedRequests = config.getBoolean("logFailedRequests", false);
 		logSentData = config.getBoolean("logSentData", false);
 		logResponseStatusText = config.getBoolean("logResponseStatusText", false);
-		
+
 		if (enabled) {
 			boolean found = false;
 			// Search for all other bStats Metrics classes to see if we are the first one
@@ -146,8 +145,7 @@ public class Metrics {
 					service.getField("B_STATS_VERSION"); // Our identifier :)
 					found = true; // We aren't the first
 					break;
-				} catch (NoSuchFieldException ignored) {
-				}
+				} catch (NoSuchFieldException ignored) { }
 			}
 			// Register our service
 			Bukkit.getServicesManager().register(Metrics.class, this, plugin, ServicePriority.Normal);
@@ -157,7 +155,7 @@ public class Metrics {
 			}
 		}
 	}
-	
+
 	/**
 	 * Checks if bStats is enabled.
 	 *
@@ -166,7 +164,7 @@ public class Metrics {
 	public boolean isEnabled() {
 		return enabled;
 	}
-	
+
 	/**
 	 * Adds a custom chart.
 	 *
@@ -178,29 +176,31 @@ public class Metrics {
 		}
 		charts.add(chart);
 	}
-	
+
 	/**
 	 * Starts the Scheduler which submits our data every 30 minutes.
 	 */
 	private void startSubmitting() {
-		final Timer timer = new Timer(true); // We use a timer cause the Bukkit scheduler is affected by server lags
-		timer.scheduleAtFixedRate(new TimerTask() {
-			@Override
-			public void run() {
-				if (!plugin.isEnabled()) { // Plugin was disabled
-					timer.cancel();
-					return;
-				}
-				// Nevertheless we want our code to run in the Bukkit main thread, so we have to use the Bukkit scheduler
-				// Don't be afraid! The connection to the bStats server is still async, only the stats collection is sync ;)
-				Bukkit.getScheduler().runTask(plugin, () -> submitData());
+		final Runnable submitTask = () -> {
+			if (!plugin.isEnabled()) { // Plugin was disabled
+				scheduler.shutdown();
+				return;
 			}
-		}, 1000 * 60 * 5, 1000 * 60 * 30);
-		// Submit the data every 30 minutes, first time after 5 minutes to give other plugins enough time to start
-		// WARNING: Changing the frequency has no effect but your plugin WILL be blocked/deleted!
-		// WARNING: Just don't do it!
+			// Nevertheless we want our code to run in the Bukkit main thread, so we have to use the Bukkit scheduler
+			// Don't be afraid! The connection to the bStats server is still async, only the stats collection is sync ;)
+			Bukkit.getScheduler().runTask(plugin, this::submitData);
+		};
+
+		// Many servers tend to restart at a fixed time at xx:00 which causes an uneven distribution of requests on the
+		// bStats backend. To circumvent this problem, we introduce some randomness into the initial and second delay.
+		// WARNING: You must not modify and part of this Metrics class, including the submit delay or frequency!
+		// WARNING: Modifying this code will get your plugin banned on bStats. Just don't do it!
+		long initialDelay = (long) (1000 * 60 * (3 + Math.random() * 3));
+		long secondDelay = (long) (1000 * 60 * (Math.random() * 30));
+		scheduler.schedule(submitTask, initialDelay, TimeUnit.MILLISECONDS);
+		scheduler.scheduleAtFixedRate(submitTask, initialDelay + secondDelay, 1000 * 60 * 30, TimeUnit.MILLISECONDS);
 	}
-	
+
 	/**
 	 * Gets the plugin specific data.
 	 * This method is called using Reflection.
@@ -209,10 +209,10 @@ public class Metrics {
 	 */
 	public JsonObject getPluginData() {
 		JsonObject data = new JsonObject();
-		
+
 		String pluginName = plugin.getDescription().getName();
 		String pluginVersion = plugin.getDescription().getVersion();
-		
+
 		data.addProperty("pluginName", pluginName); // Append the name of the plugin
 		data.addProperty("id", pluginId); // Append the id of the plugin
 		data.addProperty("pluginVersion", pluginVersion); // Append the version of the plugin
@@ -226,10 +226,10 @@ public class Metrics {
 			customCharts.add(chart);
 		}
 		data.add("customCharts", customCharts);
-		
+
 		return data;
 	}
-	
+
 	/**
 	 * Gets the server specific data.
 	 *
@@ -237,48 +237,58 @@ public class Metrics {
 	 */
 	private JsonObject getServerData() {
 		// Minecraft specific data
-		int playerAmount = Bukkit.getOnlinePlayers().size();
+		int playerAmount;
+		try {
+			// Around MC 1.8 the return type was changed to a collection from an array,
+			// This fixes java.lang.NoSuchMethodError: org.bukkit.Bukkit.getOnlinePlayers()Ljava/util/Collection;
+			Method onlinePlayersMethod = Class.forName("org.bukkit.Server").getMethod("getOnlinePlayers");
+			playerAmount = onlinePlayersMethod.getReturnType().equals(Collection.class)
+					? ((Collection<?>) onlinePlayersMethod.invoke(Bukkit.getServer())).size()
+					: ((Player[]) onlinePlayersMethod.invoke(Bukkit.getServer())).length;
+		} catch (Exception e) {
+			playerAmount = Bukkit.getOnlinePlayers().size(); // Just use the new method if the Reflection failed
+		}
 		int onlineMode = Bukkit.getOnlineMode() ? 1 : 0;
 		String bukkitVersion = Bukkit.getVersion();
 		String bukkitName = Bukkit.getName();
-		
+
 		// OS/Java specific data
 		String javaVersion = System.getProperty("java.version");
 		String osName = System.getProperty("os.name");
 		String osArch = System.getProperty("os.arch");
 		String osVersion = System.getProperty("os.version");
 		int coreCount = Runtime.getRuntime().availableProcessors();
-		
+
 		JsonObject data = new JsonObject();
-		
+
 		data.addProperty("serverUUID", serverUUID);
-		
+
 		data.addProperty("playerAmount", playerAmount);
 		data.addProperty("onlineMode", onlineMode);
 		data.addProperty("bukkitVersion", bukkitVersion);
 		data.addProperty("bukkitName", bukkitName);
-		
+
 		data.addProperty("javaVersion", javaVersion);
 		data.addProperty("osName", osName);
 		data.addProperty("osArch", osArch);
 		data.addProperty("osVersion", osVersion);
 		data.addProperty("coreCount", coreCount);
-		
+
 		return data;
 	}
-	
+
 	/**
 	 * Collects the data and sends it afterwards.
 	 */
 	private void submitData() {
 		final JsonObject data = getServerData();
-		
+
 		JsonArray pluginData = new JsonArray();
 		// Search for all other bStats Metrics classes to get their plugin data
 		for (Class<?> service : Bukkit.getServicesManager().getKnownServices()) {
 			try {
 				service.getField("B_STATS_VERSION"); // Our identifier :)
-				
+
 				for (RegisteredServiceProvider<?> provider : Bukkit.getServicesManager().getRegistrations(service)) {
 					try {
 						Object plugin = provider.getService().getMethod("getPluginData").invoke(provider.getProvider());
@@ -291,7 +301,7 @@ public class Metrics {
 									Method jsonStringGetter = jsonObjectJsonSimple.getDeclaredMethod("toJSONString");
 									jsonStringGetter.setAccessible(true);
 									String jsonString = (String) jsonStringGetter.invoke(plugin);
-									JsonObject object = JsonParser.parseString(jsonString).getAsJsonObject();
+									JsonObject object = new JsonParser().parse(jsonString).getAsJsonObject();
 									pluginData.add(object);
 								}
 							} catch (ClassNotFoundException e) {
@@ -301,15 +311,13 @@ public class Metrics {
 								}
 							}
 						}
-					} catch (NullPointerException | NoSuchMethodException | IllegalAccessException | InvocationTargetException ignored) {
-					}
+					} catch (NullPointerException | NoSuchMethodException | IllegalAccessException | InvocationTargetException ignored) { }
 				}
-			} catch (NoSuchFieldException ignored) {
-			}
+			} catch (NoSuchFieldException ignored) { }
 		}
-		
+
 		data.add("plugins", pluginData);
-		
+
 		// Create a new thread for the connection to the bStats server
 		new Thread(() -> {
 			try {
@@ -323,12 +331,12 @@ public class Metrics {
 			}
 		}).start();
 	}
-	
+
 	/**
 	 * Sends the data to the bStats server.
 	 *
 	 * @param plugin Any plugin. It's just used to get a logger instance.
-	 * @param data   The data to send.
+	 * @param data The data to send.
 	 * @throws Exception If the request failed.
 	 */
 	private static void sendData(Plugin plugin, JsonObject data) throws Exception {
@@ -342,10 +350,10 @@ public class Metrics {
 			plugin.getLogger().info("Sending data to bStats: " + data);
 		}
 		HttpsURLConnection connection = (HttpsURLConnection) new URL(URL).openConnection();
-		
+
 		// Compress the data to save bandwidth
 		byte[] compressedData = compress(data.toString());
-		
+
 		// Add headers
 		connection.setRequestMethod("POST");
 		connection.addRequestProperty("Accept", "application/json");
@@ -354,13 +362,13 @@ public class Metrics {
 		connection.addRequestProperty("Content-Length", String.valueOf(compressedData.length));
 		connection.setRequestProperty("Content-Type", "application/json"); // We send our data in JSON format
 		connection.setRequestProperty("User-Agent", "MC-Server/" + B_STATS_VERSION);
-		
+
 		// Send data
 		connection.setDoOutput(true);
 		try (DataOutputStream outputStream = new DataOutputStream(connection.getOutputStream())) {
 			outputStream.write(compressedData);
 		}
-		
+
 		StringBuilder builder = new StringBuilder();
 		try (BufferedReader bufferedReader = new BufferedReader(new InputStreamReader(connection.getInputStream()))) {
 			String line;
@@ -368,12 +376,12 @@ public class Metrics {
 				builder.append(line);
 			}
 		}
-		
+
 		if (logResponseStatusText) {
 			plugin.getLogger().info("Sent data to bStats and received response: " + builder);
 		}
 	}
-	
+
 	/**
 	 * Gzips the given String.
 	 *
@@ -391,15 +399,15 @@ public class Metrics {
 		}
 		return outputStream.toByteArray();
 	}
-	
+
 	/**
 	 * Represents a custom chart.
 	 */
 	public static abstract class CustomChart {
-		
+
 		// The id of the chart
 		final String chartId;
-		
+
 		/**
 		 * Class constructor.
 		 *
@@ -411,7 +419,7 @@ public class Metrics {
 			}
 			this.chartId = chartId;
 		}
-		
+
 		private JsonObject getRequestJsonObject() {
 			JsonObject chart = new JsonObject();
 			chart.addProperty("chartId", chartId);
@@ -430,29 +438,29 @@ public class Metrics {
 			}
 			return chart;
 		}
-		
+
 		protected abstract JsonObject getChartData() throws Exception;
-		
+
 	}
-	
+
 	/**
 	 * Represents a custom simple pie.
 	 */
 	public static class SimplePie extends CustomChart {
-		
+
 		private final Callable<String> callable;
-		
+
 		/**
 		 * Class constructor.
 		 *
-		 * @param chartId  The id of the chart.
+		 * @param chartId The id of the chart.
 		 * @param callable The callable which is used to request the chart data.
 		 */
 		public SimplePie(String chartId, Callable<String> callable) {
 			super(chartId);
 			this.callable = callable;
 		}
-		
+
 		@Override
 		protected JsonObject getChartData() throws Exception {
 			JsonObject data = new JsonObject();
@@ -465,25 +473,25 @@ public class Metrics {
 			return data;
 		}
 	}
-	
+
 	/**
 	 * Represents a custom advanced pie.
 	 */
 	public static class AdvancedPie extends CustomChart {
-		
+
 		private final Callable<Map<String, Integer>> callable;
-		
+
 		/**
 		 * Class constructor.
 		 *
-		 * @param chartId  The id of the chart.
+		 * @param chartId The id of the chart.
 		 * @param callable The callable which is used to request the chart data.
 		 */
 		public AdvancedPie(String chartId, Callable<Map<String, Integer>> callable) {
 			super(chartId);
 			this.callable = callable;
 		}
-		
+
 		@Override
 		protected JsonObject getChartData() throws Exception {
 			JsonObject data = new JsonObject();
@@ -509,25 +517,25 @@ public class Metrics {
 			return data;
 		}
 	}
-	
+
 	/**
 	 * Represents a custom drilldown pie.
 	 */
 	public static class DrilldownPie extends CustomChart {
-		
+
 		private final Callable<Map<String, Map<String, Integer>>> callable;
-		
+
 		/**
 		 * Class constructor.
 		 *
-		 * @param chartId  The id of the chart.
+		 * @param chartId The id of the chart.
 		 * @param callable The callable which is used to request the chart data.
 		 */
 		public DrilldownPie(String chartId, Callable<Map<String, Map<String, Integer>>> callable) {
 			super(chartId);
 			this.callable = callable;
 		}
-		
+
 		@Override
 		public JsonObject getChartData() throws Exception {
 			JsonObject data = new JsonObject();
@@ -558,25 +566,25 @@ public class Metrics {
 			return data;
 		}
 	}
-	
+
 	/**
 	 * Represents a custom single line chart.
 	 */
 	public static class SingleLineChart extends CustomChart {
-		
+
 		private final Callable<Integer> callable;
-		
+
 		/**
 		 * Class constructor.
 		 *
-		 * @param chartId  The id of the chart.
+		 * @param chartId The id of the chart.
 		 * @param callable The callable which is used to request the chart data.
 		 */
 		public SingleLineChart(String chartId, Callable<Integer> callable) {
 			super(chartId);
 			this.callable = callable;
 		}
-		
+
 		@Override
 		protected JsonObject getChartData() throws Exception {
 			JsonObject data = new JsonObject();
@@ -588,27 +596,27 @@ public class Metrics {
 			data.addProperty("value", value);
 			return data;
 		}
-		
+
 	}
-	
+
 	/**
 	 * Represents a custom multi line chart.
 	 */
 	public static class MultiLineChart extends CustomChart {
-		
+
 		private final Callable<Map<String, Integer>> callable;
-		
+
 		/**
 		 * Class constructor.
 		 *
-		 * @param chartId  The id of the chart.
+		 * @param chartId The id of the chart.
 		 * @param callable The callable which is used to request the chart data.
 		 */
 		public MultiLineChart(String chartId, Callable<Map<String, Integer>> callable) {
 			super(chartId);
 			this.callable = callable;
 		}
-		
+
 		@Override
 		protected JsonObject getChartData() throws Exception {
 			JsonObject data = new JsonObject();
@@ -633,27 +641,27 @@ public class Metrics {
 			data.add("values", values);
 			return data;
 		}
-		
+
 	}
-	
+
 	/**
 	 * Represents a custom simple bar chart.
 	 */
 	public static class SimpleBarChart extends CustomChart {
-		
+
 		private final Callable<Map<String, Integer>> callable;
-		
+
 		/**
 		 * Class constructor.
 		 *
-		 * @param chartId  The id of the chart.
+		 * @param chartId The id of the chart.
 		 * @param callable The callable which is used to request the chart data.
 		 */
 		public SimpleBarChart(String chartId, Callable<Map<String, Integer>> callable) {
 			super(chartId);
 			this.callable = callable;
 		}
-		
+
 		@Override
 		protected JsonObject getChartData() throws Exception {
 			JsonObject data = new JsonObject();
@@ -671,27 +679,27 @@ public class Metrics {
 			data.add("values", values);
 			return data;
 		}
-		
+
 	}
-	
+
 	/**
 	 * Represents a custom advanced bar chart.
 	 */
 	public static class AdvancedBarChart extends CustomChart {
-		
+
 		private final Callable<Map<String, int[]>> callable;
-		
+
 		/**
 		 * Class constructor.
 		 *
-		 * @param chartId  The id of the chart.
+		 * @param chartId The id of the chart.
 		 * @param callable The callable which is used to request the chart data.
 		 */
 		public AdvancedBarChart(String chartId, Callable<Map<String, int[]>> callable) {
 			super(chartId);
 			this.callable = callable;
 		}
-		
+
 		@Override
 		protected JsonObject getChartData() throws Exception {
 			JsonObject data = new JsonObject();
@@ -721,5 +729,5 @@ public class Metrics {
 			return data;
 		}
 	}
-	
+
 }

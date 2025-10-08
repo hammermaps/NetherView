@@ -12,7 +12,6 @@ import org.bukkit.Location;
 import org.bukkit.World;
 import org.bukkit.entity.Player;
 
-import java.lang.reflect.InvocationTargetException;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -56,12 +55,7 @@ public class DisplayUtils {
 			}
 			
 			fakeBlocksPacket.getMultiBlockChangeInfoArrays().write(0, blockInfo);
-			
-			try {
-				protocolManager.sendServerPacket(player, fakeBlocksPacket);
-			} catch (InvocationTargetException e) {
-				throw new RuntimeException("Failed to send packet " + fakeBlocksPacket, e);
-			}
+			protocolManager.sendServerPacket(player, fakeBlocksPacket);
 		}
 	}
 	

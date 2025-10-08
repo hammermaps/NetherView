@@ -100,6 +100,10 @@ public class BlockCache {
 		return borderType;
 	}
 	
+	public Vector getFacing() {
+		return facing.clone();
+	}
+
 	public BlockType getBlockTypeAt(BlockVec blockPos) {
 		
 		if (!contains(blockPos)) {
